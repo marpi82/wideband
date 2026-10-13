@@ -38,14 +38,11 @@
 
 #define WB_DATA_BASE_ADDR 0x190
 
-// Extended (unclamped) lambda / pump current / O2 frame
-// ID = WB_EXTENDED_BASE_ADDR + CanIndexOffset + channel
-// Kept below Standard/Diag (0x190+): valid IDs are 0x172..0x18F inclusive.
-#define WB_EXTENDED_BASE_ADDR 0x172
-// Max (CanIndexOffset + channel) so Extended never reaches WB_DATA_BASE_ADDR.
-#define WB_EXTENDED_MAX_INDEX_SUM (WB_DATA_BASE_ADDR - WB_EXTENDED_BASE_ADDR - 1)
-// Max CanIndexOffset for a board with the given AFR channel count.
-#define WB_MAX_CAN_INDEX_OFFSET(channels) (WB_EXTENDED_MAX_INDEX_SUM - ((channels)-1))
+// Per controller/channel block: Standard (+0), Diag (+1), Extended (+2).
+// base = WB_DATA_BASE_ADDR + WB_FRAME_STRIDE * (channel + CanIndexOffset)
+// e.g. offset 0 ch0 -> 0x190 / 0x191 / 0x192
+#define WB_FRAME_STRIDE 3
+#define WB_EXTENDED_BASE_ADDR (WB_DATA_BASE_ADDR + 2)
 
 // we transmit every 10ms
 #define WBO_TX_PERIOD_MS 10
