@@ -30,6 +30,8 @@ CPPSRC += \
 	test_stubs.cpp \
 	tests/test_sampler.cpp \
 	tests/test_heater.cpp \
+	tests/test_lambda_conversion.cpp \
+	$(FIRMWARE_DIR)/lambda_conversion.cpp \
 
 INCDIR += \
 	$(PROJECT_DIR)/googletest/googlemock/ \

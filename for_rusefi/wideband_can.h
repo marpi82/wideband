@@ -38,6 +38,10 @@
 
 #define WB_DATA_BASE_ADDR 0x190
 
+// Extended (unclamped) lambda / pump current / O2 frame
+// ID = WB_EXTENDED_BASE_ADDR + CanIndexOffset + channel
+#define WB_EXTENDED_BASE_ADDR 0x172
+
 // we transmit every 10ms
 #define WBO_TX_PERIOD_MS 10
 
@@ -83,6 +87,18 @@ struct DiagData
 
     uint8_t HeaterDuty;
     uint8_t pad;
+};
+
+struct ExtendedData
+{
+    // Lambda without ~2.0 clamp used by StandardData, scaled x1000
+    // e.g. 3.450 -> 3450. Saturates at uint16 max (~65.535).
+    uint16_t LambdaFull;
+    // Measured pump current in mA x1000 (e.g. 1.234 mA -> 1234)
+    int16_t PumpCurrent;
+    // Free oxygen estimate from LambdaFull: 20.95*(1-1/lambda), clamped >= 0, x100
+    uint16_t O2Percent;
+    uint16_t Reserved;
 };
 
 static inline const char* describeStatus(Status status)

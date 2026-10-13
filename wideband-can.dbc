@@ -49,6 +49,12 @@ BO_ 401 WidebandDiagData: 8 WidebandController
  SG_ Status : 40|8@1+ (1,0) [0|0] ""  ECU
  SG_ HeaterDuty : 48|8@1+ (0.392157,0) [0|100] "%"  ECU
 
+BO_ 370 WidebandExtendedData: 8 WidebandController
+ SG_ LambdaFull : 0|16@1+ (0.001,0) [0|65.535] "lambda"  ECU
+ SG_ PumpCurrent : 16|16@1- (0.001,0) [-32.768|32.767] "mA"  ECU
+ SG_ O2Percent : 32|16@1+ (0.01,0) [0|655.35] "%"  ECU
+ SG_ Reserved : 48|16@1+ (1,0) [0|0] ""  ECU
+
 BO_ 2398420992 WidebandControl: 2 ECU
  SG_ BatteryVoltage : 0|8@1+ (0.1,0) [0|25] "volt"  WidebandController
  SG_ HeaterEnable : 8|8@1+ (1,0) [0|1] ""  WidebandController
@@ -59,6 +65,10 @@ CM_ BO_ 400 "Increment ID by 2*N for the N-th controller";
 CM_ SG_ 400 Version "Currently 0xA0";
 CM_ SG_ 400 Valid "Set to 1 when the lambda value is valid";
 CM_ BO_ 401 "Increment ID by 2*N for the N-th controller";
+CM_ BO_ 370 "ID = 0x172 + CanIndexOffset + channel";
+CM_ SG_ 370 LambdaFull "Unclamped lambda x1000 (not limited to ~2 like StandardData)";
+CM_ SG_ 370 PumpCurrent "Measured pump current in mA x1000";
+CM_ SG_ 370 O2Percent "Free O2% from LambdaFull: 20.95*(1-1/lambda), clamped >=0, x100";
 CM_ BO_ 2398420992 "Sent by ECU to control wideband controller";
 CM_ SG_ 2398420992 BatteryVoltage "Provide system supply voltage for heater supply voltage compensation";
 CM_ SG_ 2398420992 HeaterEnable "Set to 1 to allow sensor heating once engine runs";

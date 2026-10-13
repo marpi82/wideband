@@ -2,18 +2,21 @@
 #include "sampling.h"
 #include "port.h"
 
-static float GetPhiLsu49(float pumpCurrent)
+static float GetPhiLsu49(float pumpCurrent, bool clamped)
 {
-    // Maximum lambda ~2
-    if (pumpCurrent > 1.11f)
+    if (clamped)
     {
-        return 0.5f;
-    }
+        // Maximum lambda ~2
+        if (pumpCurrent > 1.11f)
+        {
+            return 0.5f;
+        }
 
-    // Minimum lambda ~0.5
-    if (pumpCurrent < -3.5f)
-    {
-        return 1 / 0.5f;
+        // Minimum lambda ~0.5
+        if (pumpCurrent < -3.5f)
+        {
+            return 1 / 0.5f;
+        }
     }
 
     // This estimation is accurate within 0.5% from 0.8 to 1.0, and 0.01% from 1 to 1.2 lambda when compared to the
@@ -23,18 +26,21 @@ static float GetPhiLsu49(float pumpCurrent)
     return gain * pumpCurrent + 0.99559f;
 }
 
-static float GetPhiLsu42(float pumpCurrent)
+static float GetPhiLsu42(float pumpCurrent, bool clamped)
 {
-    // Maximum lambda ~2
-    if (pumpCurrent > 1.19f)
+    if (clamped)
     {
-        return 0.5f;
-    }
+        // Maximum lambda ~2
+        if (pumpCurrent > 1.19f)
+        {
+            return 0.5f;
+        }
 
-    // Minimum lambda ~0.7
-    if (pumpCurrent < -1.85f)
-    {
-        return 1 / 0.7f;
+        // Minimum lambda ~0.7
+        if (pumpCurrent < -1.85f)
+        {
+            return 1 / 0.7f;
+        }
     }
 
     // This estimation is accurate within 0.5% from 0.8 to 1.0, and 0.01% from 1 to 1.2 lambda when compared to the
@@ -44,18 +50,21 @@ static float GetPhiLsu42(float pumpCurrent)
     return gain * pumpCurrent + 0.99153f;
 }
 
-static float GetPhiLsuAdv(float pumpCurrent)
+static float GetPhiLsuAdv(float pumpCurrent, bool clamped)
 {
-    // Maximum lambda 2.434
-    if (pumpCurrent > 0.759f)
+    if (clamped)
     {
-        return 1 / 2.434f;
-    }
+        // Maximum lambda 2.434
+        if (pumpCurrent > 0.759f)
+        {
+            return 1 / 2.434f;
+        }
 
-    // Minimum lambda is 0.65
-    if (pumpCurrent < -1.108)
-    {
-        return 1 / 0.65f;
+        // Minimum lambda is 0.65
+        if (pumpCurrent < -1.108)
+        {
+            return 1 / 0.65f;
+        }
     }
 
     if (pumpCurrent < 0)
@@ -71,22 +80,51 @@ static float GetPhiLsuAdv(float pumpCurrent)
     }
 }
 
-static float GetPhi(float pumpCurrent)
+static float GetPhi(float pumpCurrent, bool clamped)
 {
     switch (GetSensorType())
     {
-    case SensorType::LSU49: return GetPhiLsu49(pumpCurrent);
-    case SensorType::LSU42: return GetPhiLsu42(pumpCurrent);
-    case SensorType::LSUADV: return GetPhiLsuAdv(pumpCurrent);
+    case SensorType::LSU49: return GetPhiLsu49(pumpCurrent, clamped);
+    case SensorType::LSU42: return GetPhiLsu42(pumpCurrent, clamped);
+    case SensorType::LSUADV: return GetPhiLsuAdv(pumpCurrent, clamped);
     }
 
     return 1;
 }
 
+float ConvertPumpCurrentToLambda(float pumpCurrent, bool clamped)
+{
+    float phi = GetPhi(pumpCurrent, clamped);
+
+    // Protect against divide-by-zero / negative phi when extrapolating very lean
+    constexpr float kMinPhi = 1.0f / 65.535f;
+    if (phi < kMinPhi)
+    {
+        phi = kMinPhi;
+    }
+
+    return 1 / phi;
+}
+
+float ConvertLambdaToO2Percent(float lambda)
+{
+    if (lambda <= 0)
+    {
+        return 0;
+    }
+
+    float o2 = 20.95f * (1.0f - 1.0f / lambda);
+    return o2 < 0 ? 0 : o2;
+}
+
 float GetLambda(int ch)
 {
     float pumpCurrent = GetSampler(ch).GetPumpNominalCurrent();
+    return ConvertPumpCurrentToLambda(pumpCurrent, true);
+}
 
-    // Lambda is reciprocal of phi
-    return 1 / GetPhi(pumpCurrent);
+float GetLambdaFull(int ch)
+{
+    float pumpCurrent = GetSampler(ch).GetPumpNominalCurrent();
+    return ConvertPumpCurrentToLambda(pumpCurrent, false);
 }

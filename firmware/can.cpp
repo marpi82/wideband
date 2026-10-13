@@ -209,6 +209,21 @@ void SendRusefiFormat(uint8_t ch)
         frame.get().status = GetCurrentStatus(ch);
         frame.get().HeaterDuty = GetHeaterDuty(ch) * 255;
     }
+
+    {
+        // Extended frame: unclamped lambda, measured pump current, O2%
+        // ID = 0x172 + CanIndexOffset + channel
+        CanTxTyped<wbo::ExtendedData> frame(WB_EXTENDED_BASE_ADDR + configuration->CanIndexOffset + ch);
+
+        float lambdaFull = GetLambdaFull(ch);
+        float pumpCurrentMa = sampler.GetPumpNominalCurrent();
+        float o2Percent = ConvertLambdaToO2Percent(lambdaFull);
+
+        frame.get().LambdaFull = (uint16_t)clampF(0, lambdaFull * 1000.0f, 65535.0f);
+        frame.get().PumpCurrent = (int16_t)clampF(-32768.0f, pumpCurrentMa * 1000.0f, 32767.0f);
+        frame.get().O2Percent = (uint16_t)clampF(0, o2Percent * 100.0f, 65535.0f);
+        frame.get().Reserved = 0;
+    }
 }
 
 // Weak link so boards can override it
