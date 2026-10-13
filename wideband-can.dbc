@@ -65,7 +65,7 @@ CM_ BO_ 400 "Increment ID by 2*N for the N-th controller";
 CM_ SG_ 400 Version "Currently 0xA0";
 CM_ SG_ 400 Valid "Set to 1 when the lambda value is valid";
 CM_ BO_ 401 "Increment ID by 2*N for the N-th controller";
-CM_ BO_ 370 "ID = 0x172 + CanIndexOffset + channel";
+CM_ BO_ 370 "ID = 0x172 + CanIndexOffset + channel; CanIndexOffset limited so IDs stay in 0x172..0x18F (below Standard/Diag at 0x190)";
 CM_ SG_ 370 LambdaFull "Unclamped lambda x1000 (not limited to ~2 like StandardData)";
 CM_ SG_ 370 PumpCurrent "Measured pump current in mA x1000";
 CM_ SG_ 370 O2Percent "Free O2% from LambdaFull: 20.95*(1-1/lambda), clamped >=0, x100";
