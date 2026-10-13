@@ -38,6 +38,15 @@
 
 #define WB_DATA_BASE_ADDR 0x190
 
+// Extended (unclamped) lambda / pump current / O2 frame
+// ID = WB_EXTENDED_BASE_ADDR + CanIndexOffset + channel
+// Kept below Standard/Diag (0x190+): valid IDs are 0x172..0x18F inclusive.
+#define WB_EXTENDED_BASE_ADDR 0x172
+// Max (CanIndexOffset + channel) so Extended never reaches WB_DATA_BASE_ADDR.
+#define WB_EXTENDED_MAX_INDEX_SUM (WB_DATA_BASE_ADDR - WB_EXTENDED_BASE_ADDR - 1)
+// Max CanIndexOffset for a board with the given AFR channel count.
+#define WB_MAX_CAN_INDEX_OFFSET(channels) (WB_EXTENDED_MAX_INDEX_SUM - ((channels)-1))
+
 // we transmit every 10ms
 #define WBO_TX_PERIOD_MS 10
 
@@ -83,6 +92,18 @@ struct DiagData
 
     uint8_t HeaterDuty;
     uint8_t pad;
+};
+
+struct ExtendedData
+{
+    // Lambda without ~2.0 clamp used by StandardData, scaled x1000
+    // e.g. 3.450 -> 3450. Saturates at uint16 max (~65.535).
+    uint16_t LambdaFull;
+    // Measured pump current in mA x1000 (e.g. 1.234 mA -> 1234)
+    int16_t PumpCurrent;
+    // Free oxygen estimate from LambdaFull: 20.95*(1-1/lambda), clamped >= 0, x100
+    uint16_t O2Percent;
+    uint16_t Reserved;
 };
 
 static inline const char* describeStatus(Status status)

@@ -144,6 +144,13 @@ void CanRxThread(void*)
         // Check if it's an "index set" message
         else if (frame.DLC == 1 && CAN_ID(frame) == WB_MSG_SET_INDEX)
         {
+            // Reject offsets that would place ExtendedData on/above StandardData (0x190+)
+            constexpr uint8_t maxOffset = WB_MAX_CAN_INDEX_OFFSET(AFR_CHANNELS);
+            if (frame.data8[0] > maxOffset)
+            {
+                continue;
+            }
+
             configuration = GetConfiguration();
             configuration->CanIndexOffset = frame.data8[0];
             SetConfiguration();
@@ -208,6 +215,24 @@ void SendRusefiFormat(uint8_t ch)
         frame.get().PumpDuty = pumpDuty * 255;
         frame.get().status = GetCurrentStatus(ch);
         frame.get().HeaterDuty = GetHeaterDuty(ch) * 255;
+    }
+
+    // Skip ExtendedData if a previously stored offset would collide with 0x190+
+    constexpr uint8_t maxOffset = WB_MAX_CAN_INDEX_OFFSET(AFR_CHANNELS);
+    if (configuration->CanIndexOffset <= maxOffset)
+    {
+        // Extended frame: unclamped lambda, measured pump current, O2%
+        // ID = 0x172 + CanIndexOffset + channel
+        CanTxTyped<wbo::ExtendedData> frame(WB_EXTENDED_BASE_ADDR + configuration->CanIndexOffset + ch);
+
+        float lambdaFull = GetLambdaFull(ch);
+        float pumpCurrentMa = sampler.GetPumpNominalCurrent();
+        float o2Percent = ConvertLambdaToO2Percent(lambdaFull);
+
+        frame.get().LambdaFull = (uint16_t)clampF(0, lambdaFull * 1000.0f, 65535.0f);
+        frame.get().PumpCurrent = (int16_t)clampF(-32768.0f, pumpCurrentMa * 1000.0f, 32767.0f);
+        frame.get().O2Percent = (uint16_t)clampF(0, o2Percent * 100.0f, 65535.0f);
+        frame.get().Reserved = 0;
     }
 }
 
