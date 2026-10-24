@@ -51,6 +51,12 @@
 // mininal battery voltage to continue heating
 #define HEATER_BATTERY_OFF_VOLTAGE 7
 
+// Abort heater if measured supply is absurdly high (default: 12 V automotive).
+// Boards that run from 24 V DIN override this (see f0_module).
+#ifndef HEATER_SUPPLY_ABSURD_VOLTAGE
+#define HEATER_SUPPLY_ABSURD_VOLTAGE 23.0f
+#endif
+
 // *******************************
 // Start driving the pump just before we're at target temperature
 // minus this offset to avoid Vnerns voltage clamp near 0V

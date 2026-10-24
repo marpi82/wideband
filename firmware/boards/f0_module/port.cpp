@@ -6,7 +6,8 @@
 #include "ch.hpp"
 #include "hal.h"
 
-#define ADC_CHANNEL_COUNT 3
+// CH0 Un_sense, CH2 Ip_sense, CH3 Vm_sense, CH8 VBatt_Sense (PB0)
+#define ADC_CHANNEL_COUNT 4
 
 void PortPrepareAnalogSampling()
 {
@@ -33,7 +34,7 @@ const ADCConversionGroup convGroup =
     ADC_CFGR1_CONT | ADC_CFGR1_RES_12BIT,                  // CFGR1
     ADC_TR(0, 0),       // TR
     ADC_SMPR_SMP_7P5,      // SMPR
-    ADC_CHSELR_CHSEL0 | ADC_CHSELR_CHSEL2 | ADC_CHSELR_CHSEL3
+    ADC_CHSELR_CHSEL0 | ADC_CHSELR_CHSEL2 | ADC_CHSELR_CHSEL3 | ADC_CHSELR_CHSEL8
 };
 
 static float AverageSamples(adcsample_t* buffer, size_t idx)
@@ -60,6 +61,9 @@ AnalogResult AnalogSampleFinish()
 {
     adcDoneSemaphore.wait(TIME_INFINITE);
 
+    // F0 ADC converts selected channels in ascending index order.
+    const float vbatt = AverageSamples(adcBuffer, 3) / BATTERY_INPUT_DIVIDER;
+
     return
     {
         .ch =
@@ -67,10 +71,11 @@ AnalogResult AnalogSampleFinish()
             {
                 .NernstVoltage = AverageSamples(adcBuffer, 0) * (1.0 / NERNST_INPUT_GAIN),
                 .PumpCurrentVoltage = AverageSamples(adcBuffer, 1),
-                .HeaterSupplyVoltage = 0,
+                .HeaterSupplyVoltage = vbatt,
             },
         },
         .VirtualGroundVoltageInt = AverageSamples(adcBuffer, 2),
+        .SupplyVoltage = vbatt,
 
         // TODO!
         .McuTemp = 0,

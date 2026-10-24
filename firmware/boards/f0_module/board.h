@@ -279,11 +279,12 @@
 /*
  * GPIOB setup:
  *
+ * PB0  - VBatt_Sense (ADC_IN8)     (analog in, connector pin 7)
  * PB5  - Blue LED                  (output pushpull)
  * PB6  - Green LED                 (output pushpull)
  * PB7  - Nernst ESR driver (GPIO)  (output pushpull)
  */
-#define VAL_GPIOB_MODER             (PIN_MODE_INPUT(GPIOB_PIN0) |         \
+#define VAL_GPIOB_MODER             (PIN_MODE_ANALOG(GPIOB_PIN0) |         \
                                      PIN_MODE_INPUT(GPIOB_PIN1) |         \
                                      PIN_MODE_INPUT(GPIOB_PIN2) |           \
                                      PIN_MODE_INPUT(GPIOB_PIN3) |       \
@@ -331,7 +332,7 @@
                                      PIN_OSPEED_LOW(GPIOB_PIN13) |         \
                                      PIN_OSPEED_LOW(GPIOB_PIN14) |         \
                                      PIN_OSPEED_LOW(GPIOB_PIN15))
-#define VAL_GPIOB_PUPDR             (PIN_PUPDR_PULLUP(GPIOB_PIN0) |       \
+#define VAL_GPIOB_PUPDR             (PIN_PUPDR_FLOATING(GPIOB_PIN0) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN1) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN2) |         \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN3) |    \

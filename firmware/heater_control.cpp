@@ -241,8 +241,9 @@ void HeaterControllerBase::Update(const ISampler& sampler, HeaterAllow heaterAll
     }
 #endif
 
-    // Protect the sensor in case of very high voltage
-    if (heaterSupplyVoltage >= 23)
+    // Protect the sensor if supply is absurdly high for this board build.
+    // Nominal max heater effective voltage remains 12 V via duty = (V_eff/V_batt)^2.
+    if (heaterSupplyVoltage >= HEATER_SUPPLY_ABSURD_VOLTAGE)
     {
         duty = 0;
         heaterVoltage = 0;

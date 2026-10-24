@@ -95,9 +95,15 @@ void CanRxThread(void*)
             // - heater enable signal
             // - optionally pump control gain
 
-            // data0 contains battery voltage in tenths of a volt
-            float vbatt = frame.data8[0] * 0.1f;
-            remoteBatteryVoltage = vbatt;
+            // data0 contains battery voltage in tenths of a volt (host hint).
+            // Boards with local VBatt_Sense use the ADC for undervoltage / duty;
+            // CAN data0 must not force a false undervoltage lockout.
+            remoteBatteryVoltage = frame.data8[0] * 0.1f;
+#ifdef BOARD_HAS_VOLTAGE_SENSE
+            float vbatt = GetSupplyVoltage();
+#else
+            float vbatt = remoteBatteryVoltage;
+#endif
 
             if (vbatt < HEATER_BATTERY_OFF_VOLTAGE)
             {
