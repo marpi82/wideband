@@ -15,3 +15,5 @@ For the standalone board and the module built in to rusEFI Hellen boards, `f0_mo
 ### Branch `marpi82/custom` (Hearth)
 
 `f0_module` reads heater supply from connector pin 7 (`VBatt_Sense` → on-module 100k/10k → PB0) and accepts **24 V DIN**: effective heater voltage stays ≤ 12 V via PWM; absurd-supply abort is 32 V. See `firmware/boards/f0_module/readme.md`.
+
+CAN (vs upstream): Standard `0x190` reports **free O₂%** (×100, from unclamped λ) instead of λ; Diag stays `0x191`; **no ExtendedData / `0x192`**. Block stride is 2. `RUSEFI_WIDEBAND_VERSION` = `0xA1`.

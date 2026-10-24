@@ -179,8 +179,7 @@ void InitCan()
 
 void SendRusefiFormat(uint8_t ch)
 {
-    // Standard (+0), Diag (+1), Extended (+2); stride 3 so Extended is 0x192 for ch0/offset0
-    // without colliding with the next channel/controller block.
+    // Standard (+0), Diag (+1); stride 2 (original rusEFI block layout).
     auto baseAddress = WB_DATA_BASE_ADDR + WB_FRAME_STRIDE * (ch + configuration->CanIndexOffset);
 
     const auto& sampler = GetSampler(ch);
@@ -188,12 +187,15 @@ void SendRusefiFormat(uint8_t ch)
 
     auto nernstDc = sampler.GetNernstDc();
     auto pumpDuty = GetPumpOutputDuty(ch);
-    auto lambda = GetLambda(ch);
 
-    // Lambda is valid if:
-    // 1. Nernst voltage is near target
-    // 2. Lambda is >0.6 (sensor isn't specified below that)
-    bool lambdaValid = nernstDc > (NERNST_TARGET - 0.1f) && nernstDc < (NERNST_TARGET + 0.1f) && lambda > 0.6f;
+    // Free O2% from unclamped lambda (boiler lean range up to atmosphere).
+    float o2Percent = ConvertLambdaToO2Percent(GetLambdaFull(ch));
+
+    // Reading is valid when nernst is near target and heater is in closed loop.
+    // (No automotive lambda>0.6 gate — boilers run lean / free O2.)
+    bool nernstOk = nernstDc > (NERNST_TARGET - 0.1f) && nernstDc < (NERNST_TARGET + 0.1f);
+    bool heaterClosedLoop = heater.IsRunningClosedLoop();
+    bool o2Valid = heaterClosedLoop && nernstOk;
 
     {
         CanTxTyped<wbo::StandardData> frame(baseAddress + 0);
@@ -201,11 +203,11 @@ void SendRusefiFormat(uint8_t ch)
         // The same header is imported by the ECU and checked against this data in the frame
         frame.get().Version = RUSEFI_WIDEBAND_VERSION;
 
-        uint16_t lambdaInt = lambdaValid ? (lambda * 10000) : 0;
-        frame.get().Lambda = lambdaInt;
+        frame.get().O2Percent = o2Valid
+            ? (uint16_t)clampF(0, o2Percent * 100.0f, 65535.0f)
+            : 0;
         frame.get().TemperatureC = sampler.GetSensorTemperature();
-        bool heaterClosedLoop = heater.IsRunningClosedLoop();
-        frame.get().Valid = (heaterClosedLoop && lambdaValid) ? 0x01 : 0x00;
+        frame.get().Valid = o2Valid ? 0x01 : 0x00;
     }
 
     {
@@ -216,20 +218,6 @@ void SendRusefiFormat(uint8_t ch)
         frame.get().PumpDuty = pumpDuty * 255;
         frame.get().status = GetCurrentStatus(ch);
         frame.get().HeaterDuty = GetHeaterDuty(ch) * 255;
-    }
-
-    {
-        // Extended frame: unclamped lambda, measured pump current, O2%
-        CanTxTyped<wbo::ExtendedData> frame(baseAddress + 2);
-
-        float lambdaFull = GetLambdaFull(ch);
-        float pumpCurrentMa = sampler.GetPumpNominalCurrent();
-        float o2Percent = ConvertLambdaToO2Percent(lambdaFull);
-
-        frame.get().LambdaFull = (uint16_t)clampF(0, lambdaFull * 1000.0f, 65535.0f);
-        frame.get().PumpCurrent = (int16_t)clampF(-32768.0f, pumpCurrentMa * 1000.0f, 32767.0f);
-        frame.get().O2Percent = (uint16_t)clampF(0, o2Percent * 100.0f, 65535.0f);
-        frame.get().Reserved = 0;
     }
 }
 

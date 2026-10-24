@@ -37,7 +37,7 @@ BU_: WidebandController ECU
 
 
 BO_ 400 WidebandStandardData: 8 WidebandController
- SG_ Lambda : 16|16@1+ (0.0001,0) [0.5|2] "lambda"  ECU
+ SG_ O2Percent : 16|16@1+ (0.01,0) [0|20.95] "%"  ECU
  SG_ Version : 0|8@1+ (1,0) [0|0] ""  ECU
  SG_ Valid : 8|8@1+ (1,0) [0|1] ""  ECU
  SG_ TemperatureC : 32|16@1+ (1,0) [0|1000] "deg C"  ECU
@@ -49,27 +49,17 @@ BO_ 401 WidebandDiagData: 8 WidebandController
  SG_ Status : 40|8@1+ (1,0) [0|0] ""  ECU
  SG_ HeaterDuty : 48|8@1+ (0.392157,0) [0|100] "%"  ECU
 
-BO_ 402 WidebandExtendedData: 8 WidebandController
- SG_ LambdaFull : 0|16@1+ (0.001,0) [0|65.535] "lambda"  ECU
- SG_ PumpCurrent : 16|16@1- (0.001,0) [-32.768|32.767] "mA"  ECU
- SG_ O2Percent : 32|16@1+ (0.01,0) [0|655.35] "%"  ECU
- SG_ Reserved : 48|16@1+ (1,0) [0|0] ""  ECU
-
 BO_ 2398420992 WidebandControl: 2 ECU
  SG_ BatteryVoltage : 0|8@1+ (0.1,0) [0|25] "volt"  WidebandController
  SG_ HeaterEnable : 8|8@1+ (1,0) [0|1] ""  WidebandController
 
 
 
-CM_ BO_ 400 "Increment ID by 3*N for the N-th controller/channel (Standard/Diag/Extended block)";
-CM_ SG_ 400 Version "Currently 0xA0";
-CM_ SG_ 400 Valid "Set to 1 when the lambda value is valid";
-CM_ BO_ 401 "Increment ID by 3*N for the N-th controller/channel";
-CM_ BO_ 402 "ID = 0x192 + 3*(channel + CanIndexOffset); third frame in Standard/Diag/Extended block";
-CM_ SG_ 402 LambdaFull "Unclamped lambda x1000 (not limited to ~2 like StandardData)";
-CM_ SG_ 402 PumpCurrent "Measured pump current in mA x1000";
-CM_ SG_ 402 O2Percent "Free O2% from LambdaFull: 20.95*(1-1/lambda), clamped >=0, x100";
+CM_ BO_ 400 "Increment ID by 2*N for the N-th controller (Standard/Diag block)";
+CM_ SG_ 400 Version "Currently 0xA1 (O2% on StandardData; no ExtendedData)";
+CM_ SG_ 400 Valid "Set to 1 when O2% is valid (heater closed-loop and nernst near target)";
+CM_ SG_ 400 O2Percent "Free O2% from unclamped lambda: 20.95*(1-1/lambda), clamped >=0, x100";
+CM_ BO_ 401 "Increment ID by 2*N for the N-th controller";
 CM_ BO_ 2398420992 "Sent by ECU to control wideband controller";
 CM_ SG_ 2398420992 BatteryVoltage "Provide system supply voltage for heater supply voltage compensation";
 CM_ SG_ 2398420992 HeaterEnable "Set to 1 to allow sensor heating once engine runs";
-

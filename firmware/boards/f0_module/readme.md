@@ -10,3 +10,5 @@ Also the firmware for https://github.com/andreika-git/hellen-one/tree/master/mod
 - Absurd-supply abort raised to 32 V (stock automotive cut-off was 23 V).
 - Carrier power/CAN may live on the host board (Hearth Core); feed raw protected
   `+24V` into pin 7 (already divided on the module).
+- CAN Standard `0x190`: free **O₂%** ×100 (not λ); Diag `0x191`; no Extended/`0x192`.
+  Version byte `0xA1`.
